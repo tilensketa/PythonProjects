@@ -1,0 +1,46 @@
+{
+  "GME": {
+    "amount": 100,
+    "price": 30
+  },
+  "AMC": {
+    "amount": 2,
+    "price": 3
+  },
+  "TSLA": {
+    "amount": 0,
+    "price": 0
+  },
+  "GOOG": {
+    "amount": 0,
+    "price": 0
+  },
+  "BBBY": {
+    "amount": 3,
+    "price": 3
+  },
+  "KO": {
+    "amount": 0,
+    "price": 0
+  },
+  "AAPL": {
+    "amount": 0,
+    "price": 0
+  },
+  "BABA": {
+    "amount": 0,
+    "price": 0
+  },
+  "AML.L": {
+    "amount": 10.0,
+    "price": 217.544
+  },
+  "BTC": {
+    "amount": 13.0,
+    "price": 99.11
+  },
+  "AMZN": {
+    "amount": 2.0,
+    "price": 101.1
+  }
+}
