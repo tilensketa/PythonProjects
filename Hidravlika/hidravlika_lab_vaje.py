@@ -3,9 +3,9 @@ from math import pi, pow
 # 1. Laboratorijska vaja : Zgradba, delovanje in meritve preprostega hidravličnega sistema
 
 # Parametri bata
-D = 40
-d = 28
-L = 525
+D = 40 # mm
+d = 28 # mm
+L = 525 # mm
 
 def povrsina_kroga(d: float):
     """
@@ -31,7 +31,7 @@ def volumen_valja(A: float, L: float):
 # 1.1
 
 class MeritevPrimer1():
-    def __init__(self, tlak, volumen, cas):
+    def __init__(self, tlak: float, volumen: float, cas: float):
         """
         tlak [bar] \n
         volumen [ml] \n
@@ -42,9 +42,13 @@ class MeritevPrimer1():
         self.cas = cas
     
     def pretok(self):
+        """
+        Q ... pretok [l/min]
+        """
         Q = (self.volumen / 1000)/(self.cas / 60)
         return Q
 
+# Meritve
 meritev0 = MeritevPrimer1(0, 2000, 40)
 meritev100 = MeritevPrimer1(100, 2000, 41)
 
@@ -58,7 +62,7 @@ print(f"Izkoristek črpalke: {izkoristek_crpalke} %")
 # 1.2
 
 class MeritevPrimer2():
-    def __init__(self, pot, volumen, cas):
+    def __init__(self, pot: float, volumen: float, cas: float):
         """
         pot [mm] \n
         volumen [ml] \n
@@ -69,6 +73,9 @@ class MeritevPrimer2():
         self.cas = cas
     
     def pretok(self):
+        """
+        Q ... pretok [l/min]
+        """
         Q = (2 * self.volumen / 1000) / (self.cas / 60)
         return Q
 
@@ -77,6 +84,7 @@ povrsina_batnice = povrsina_kroga(d)
 volumen_naprej = volumen_valja(povrsina_bata, L)
 volumen_nazaj = volumen_valja(povrsina_bata-povrsina_batnice, L)
 
+# Meritve
 meritev_naprej = MeritevPrimer2(L, volumen_naprej / 1000, 26)
 meritev_nazaj = MeritevPrimer2(L, volumen_nazaj / 1000, 30)
 
