@@ -177,13 +177,13 @@ print(f"Alpha 100 : {alpha_100} 1/Pa")
 # 4. Vaja : Four Ball test
 
 # Doloci parametre
-X = [2,2,5,3,6,7,5,7,8,1] # Dobljene vrednosti premera kalote [mm] (10 vrednosti)
+X = [0.28, 0.31, 0.33, 0.36, 0.39, 0.563, 1.49422, 1.66548, 2.03223, 2.50171] # Dobljene vrednosti premera kalote [mm] (10 vrednosti)
 
 L = [6, 8, 10, 13, 16, 20, 24, 32, 40, 50, 63, 80, 100, 126, 160, 200, 250, 315, 400, 500, 620, 800]
 L_Dh = [0.95, 1.40, 1.88, 2.67, 3.52, 4.74, 6.05, 8.87, 11.96, 16.10, 21.86, 30.08, 40.5, 55.2, 75.8, 102.2, 137.5, 187.1, 258, 347, 462, 649]
 
-L_Dh_10 = L_Dh[7:17]
-L_10 = L[7:17]
+L_Dh_10 = L_Dh[6:16]
+L_10 = L[6:16]
 
 def izracun_LDhX(LDh: float, X: float):
     """
