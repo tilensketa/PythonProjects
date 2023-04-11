@@ -82,7 +82,7 @@ class MeritevPrimer2():
 povrsina_bata = povrsina_kroga(D)
 povrsina_batnice = povrsina_kroga(d)
 volumen_naprej = volumen_valja(povrsina_bata, L)
-volumen_nazaj = volumen_valja(povrsina_bata-povrsina_batnice, L)
+volumen_nazaj = volumen_valja(povrsina_bata - povrsina_batnice, L)
 
 # Meritve
 meritev_naprej = MeritevPrimer2(L, volumen_naprej / 1000, 26)
@@ -108,7 +108,11 @@ def izracun_iztisnine_hidravlicnega_motorja(Q_HM: float, ni_VHM: float, n_HM: fl
     q_HM = (Q_HM * 1000 * ni_VHM) / n_HM
     return q_HM
 
-iztisnina_hidravlicnega_motorja = izracun_iztisnine_hidravlicnega_motorja(meritev0.pretok(), 0.85, 60)
+# Parametri in meritve
+volumetricni_izkoristek = 85 # %
+obrati = 60 # min-1
+
+iztisnina_hidravlicnega_motorja = izracun_iztisnine_hidravlicnega_motorja(meritev0.pretok(), volumetricni_izkoristek / 100, obrati)
 
 print("4.")
 print(f"Iztisnina hidravlicnega motorja : {iztisnina_hidravlicnega_motorja} cm3/vrt")
