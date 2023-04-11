@@ -116,3 +116,116 @@ iztisnina_hidravlicnega_motorja = izracun_iztisnine_hidravlicnega_motorja(merite
 
 print("4.")
 print(f"Iztisnina hidravlicnega motorja : {iztisnina_hidravlicnega_motorja} cm3/vrt")
+
+# 2. Laboratorijska vaja : Meritve čistoče in termografija
+
+# 1.1
+
+class ISO4406():
+    def __init__(self, x1: float, x2: float, x3: float):
+        self.x1 = x1
+        self.x2 = x2
+        self.x3 = x3
+
+class SAEAS4059():
+    def __init__(self, A: int, B: int, C: int, D: int):
+        self.A = A
+        self.B = B
+        self.C = C
+        self.D = D
+
+class MeritevCistoce():
+    def __init__(self, cas: int, iso: ISO4406, sae: SAEAS4059, temp: float, voda: float):
+        """
+        cas [s] \n
+        iso [x1,x2,x3] \n
+        sae [A,B,C,D] \n
+        temp [°C] \n
+        voda [%]
+        """
+        self.cas = cas
+        self.iso = iso
+        self.sae = sae
+        self.temp = temp
+        self.voda = voda
+
+meritev5_iso = ISO4406(0,0,0)
+meritev10_iso = ISO4406(0,0,0)
+meritev15_iso = ISO4406(0,0,0)
+
+meritev5_sae = SAEAS4059(0,0,0,0)
+meritev10_sae = SAEAS4059(0,0,0,0)
+meritev15_sae = SAEAS4059(0,0,0,0)
+
+meritev5 = MeritevCistoce(5, meritev5_iso, meritev5_sae, 5, 5)
+meritev10 = MeritevCistoce(10, meritev10_iso, meritev10_sae, 5, 5)
+meritev15 = MeritevCistoce(15, meritev15_iso, meritev15_sae, 5, 5)
+
+# 1.2
+
+def izracun_povrsine_filtra(r: float, h: float):
+    """
+    Input: \n
+    r ... polmer filtra [m] \n
+    h ... visina filtra [m] \n
+    Output: \n
+    A ... povrsina filtra [m2]
+    """
+    A = 2 * pi * r * h + 2 * pi * pow(r, 2)
+    return A
+
+# Parametri
+specificna_prevzemnost_filtra = 90.83 # [g/m2]
+stevilo_prepogibov_filtra = 93
+r = 0.1 # polmer filtra [m]
+h = 0.1 # visina filtra [m]
+
+povrsina_filtra = izracun_povrsine_filtra(r, h)
+prevzemnost_filtra = specificna_prevzemnost_filtra * povrsina_filtra
+
+# ISO 16 14 10
+# Povprečna teža delcev od 4µm do 6 µm = 1 × 10−9g
+# Povprečna teža delcev od 6µm do 14 µm = 5 × 10−9g
+# Povprečna teža delcev 𝑛𝑎𝑑 14 µm = 69 × 10−9g
+
+masa_4 = 1 * pow(10, -9)
+masa_6 = 5 * pow(10, -9)
+masa_14 = 69 * pow(10, -9)
+st_delcev_4 = (320 + 640) / 2
+st_delcev_6 = (80 + 160) / 2
+st_delcev_14 = (5 + 10) / 2
+
+masa = masa_4 * st_delcev_4 + masa_6 * st_delcev_6 + masa_14 * st_delcev_14
+
+preciscenih_litrov = prevzemnost_filtra / masa
+
+print("1.2")
+print(f"Povrsina filtra : {povrsina_filtra} m2")
+print(f"Prevzemnost filtra : {prevzemnost_filtra} g")
+print(f"Stevilo delcev > 4 : {st_delcev_4}")
+print(f"Stevilo delcev > 6 : {st_delcev_6}")
+print(f"Stevilo delcev > 14 : {st_delcev_14}")
+print(f"Masa delcev na 1ml : {masa} g")
+print(f"Precistimo lahko : {preciscenih_litrov} l")
+
+# 2.
+
+# Parametri
+specificna_toplota_olja = 1670 # J/kgK
+gostota_olja = 860 # kg/m3
+sprememba_tlaka = 3 # Pa
+
+def izracun_sprememba_temperature(deltap: float, rho: float, c: float):
+    """
+    Input: \n
+    deltap ... sprememba tlaka [Pa] \n
+    rho ... gostota olja [kg/m3] \n
+    c ... specificna toplota olja [J/kgK] \n
+    Output: \n
+    deltaT ... sprememba temperature [°C]
+    """
+    deltaT = deltap / (rho * c)
+    return deltaT
+
+sprememba_temperature = izracun_sprememba_temperature(sprememba_tlaka, gostota_olja, specificna_toplota_olja)
+print(f"Sprememba temperature : {sprememba_temperature} °C")
