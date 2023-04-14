@@ -1,0 +1,276 @@
+WindowManager:
+    MainWindow:
+        id: main_window
+    SecondWindow:
+    AddGroupWindow:
+    AddItemWindow:
+
+<Button>
+    size_hint: 1, None
+    height: 50
+    pos_hint: {"center_x": 0.5, "center_y": 0.5}
+    background_color: (0,1,0,1)
+    background_normal: ""
+
+<MainWindow>:
+    name: "main"
+
+    GridLayout:
+        id: grid1
+        name: "griddd1"
+        cols:1
+        padding:20
+		spacing:10
+
+        Label:
+            text: "ITEM\nTRACKER"
+            size_hint: 1, None
+            height: 150
+            pos_hint: {"center_x": 0.5, "center_y": 0.5}
+            font_name: "Arial"
+			font_size: 50
+            bold: True
+            halign: "center"
+        
+        ScrollView:
+            id: scroll1
+            name: "scroolll1"
+            do_scroll_y: True
+            do_scroll_x: False
+            size_hint: (0.5, 0.5)
+            pos_hint: {"center_x": 0.5, "center_y": 0.5}
+
+            BoxLayout:
+                id: groups_layout
+                name: "grups"
+                orientation: 'vertical'
+                size_hint_y: None
+                height: self.minimum_height
+                spacing: 5
+
+                Group:
+                    group_name: "Študent"
+                
+                Button:
+                    id: add_group
+                    text: "+"
+                    on_release:
+                        app.root.current = "add_group_window"
+                        root.manager.transition.direction = "up"
+
+
+<Group>:
+    size_hint: (1, None)
+    height: 40
+
+    BoxLayout:
+        orientation: "horizontal"
+        size: self.parent.size
+        pos: self.parent.pos
+        #padding: 2.5
+
+        canvas.before:
+            Color:
+                rgba:rgba("#FFC125")
+            Rectangle:
+                pos: self.pos
+                size: self.size
+
+        Button:
+            text: root.group_name
+            pos_hint: {"center_x": 0.45, "center_y": 0.5}
+            size_hint: (0.9, 0.9)
+            on_release:
+                app.root.current = "group_window"
+                root.parent.parent.parent.parent.manager.transition.direction = "left"
+        Button:
+            text: "X"
+            pos_hint: {"center_x": 0.9, "center_y": 0.5}
+            size_hint: (0.1, 0.9)
+            background_color: (1,0,0,1)
+
+
+<AddGroupWindow>:
+    name: "add_group_window"
+    
+    BoxLayout:
+        orientation: 'vertical'
+        size_hint: (1, 0.5)
+        pos_hint: {"center_x": 0.5, "center_y": 0.5}
+        padding: 20
+		spacing: 10
+
+        Label:
+            text: "Group name:"
+            size_hint: (1, 0.5)
+            height: 100
+            pos_hint: {"center_x": 0.5, "center_y": 0.5}
+            font_name: "Arial"
+			font_size: 20
+            bold: True
+            halign: "center"
+        
+        TextInput:
+            id: new_group
+            size_hint: (1, 0.2)
+            height: 50
+            multiline: False
+
+        Button:
+            text: "Add"
+            size_hint: (1, 0.2)
+            on_release:
+                app.add_group(new_group.text)
+                #self.parent.parent.update_main()
+                app.update_main()
+                app.root.current = "main"
+                root.manager.transition.direction = "down"
+
+        Button:
+            text: "Back"
+            size_hint: (1, 0.2)
+            on_release:
+                app.root.current = "main"
+                root.manager.transition.direction = "down"
+
+<Item>:
+    size_hint: (1, None)
+    height: 40
+
+    BoxLayout:
+        orientation: "horizontal"
+        size: self.parent.size
+        pos: self.parent.pos
+        padding: 2.5
+
+        canvas.before:
+            Color:
+                rgba:rgba("#FFC125")
+            Rectangle:
+                pos: self.pos
+                size: self.size
+
+        Label:
+            text: root.item_name
+            pos_hint: {"center_x": 0.25, "center_y": 0.5}
+            size_hint: (0.4, 0.9)
+        Label:
+            text: root.item_count
+            pos_hint: {"center_x": 0.5, "center_y": 0.5}
+            size_hint: (0.2, 0.9)
+        Button:
+            text: "+"
+            pos_hint: {"center_x": 0.7, "center_y": 0.5}
+            size_hint: (0.1, 0.9)
+        Button:
+            text: "-"
+            pos_hint: {"center_x": 0.8, "center_y": 0.5}
+            size_hint: (0.1, 0.9)
+        Button:
+            text: "X"
+            pos_hint: {"center_x": 0.9, "center_y": 0.5}
+            size_hint: (0.1, 0.9)
+            background_color: (1,0,0,1)
+
+<SecondWindow>:
+    name: "group_window"
+
+    GridLayout:
+        cols:1
+        padding:20
+		spacing:10
+
+        Label:
+            text: "ŠTUDENT"
+            size_hint: 1, None
+            height: 150
+            pos_hint: {"center_x": 0.5, "center_y": 0.5}
+            font_name: "Arial"
+			font_size: 50
+            bold: True
+            halign: "center"
+        
+        ScrollView:
+            do_scroll_y: True
+            do_scroll_x: False
+            size_hint_y: None
+            height: 300
+
+            BoxLayout:
+                orientation: 'vertical'
+                size_hint_y: None
+                height: self.minimum_height
+                spacing: 5
+                padding: 5
+
+                #canvas.before:
+                #    Color:
+                #        rgba:rgba("#FFA500")
+                #    Rectangle:
+                #        pos: self.pos
+                #        size: self.size
+
+                Item:
+                    item_name: "Gate"
+                    item_count: "0"
+                Item:
+                    item_name: "Zokni"
+                    item_count: "0"
+                Item:
+                    item_name: "Majce"
+                    item_count: "0"
+                Item:
+                    item_name: "Hlače"
+                    item_count: "0"
+                Button:
+                    text: "+"
+                    on_release:
+                        app.root.current = "add_item_window"
+                        root.manager.transition.direction = "up"
+
+        Button:
+            text: "Go Back"
+            on_release:
+                app.root.current = "main"
+                root.manager.transition.direction = "right"
+
+
+<AddItemWindow>:
+    name: "add_item_window"
+    
+    BoxLayout:
+        orientation: 'vertical'
+        size_hint: (1, 0.5)
+        pos_hint: {"center_x": 0.5, "center_y": 0.5}
+        padding: 20
+		spacing: 10
+
+        Label:
+            text: "Item name:"
+            size_hint: (1, 0.5)
+            height: 100
+            pos_hint: {"center_x": 0.5, "center_y": 0.5}
+            font_name: "Arial"
+			font_size: 20
+            bold: True
+            halign: "center"
+        
+        TextInput:
+            text: ""
+            size_hint: (1, 0.2)
+            height: 50
+            multiline: False
+
+        Button:
+            text: "Add"
+            size_hint: (1, 0.2)
+            on_release:
+                app.root.current = "group_window"
+                root.manager.transition.direction = "down"
+
+        Button:
+            text: "back"
+            size_hint: (1, 0.2)
+            on_release:
+                app.root.current = "group_window"
+                root.manager.transition.direction = "down"
