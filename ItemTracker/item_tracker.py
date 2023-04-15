@@ -3,8 +3,8 @@ from kivy.lang import Builder
 from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.core.window import Window
 Window.clearcolor = (0.231, 0.231, 0.231, 1)
-Window.size = (300, 600)
-#Window.fullscreen = 'auto'
+#Window.size = (300, 600)
+Window.fullscreen = 'auto'
 
 from kivy.uix.widget import Widget
 from kivy.properties import StringProperty
@@ -47,8 +47,9 @@ class WindowManager(ScreenManager):
 
 kv = Builder.load_file("my.kv")
 
-class MyMainApp(App):
+class ItemTrackerApp(App):
     def build(self):
+        self.icon = "logo.png"
         Clock.schedule_once(self.update_on_start)
         return kv
     
@@ -129,9 +130,5 @@ class MyMainApp(App):
                 del data_info[group]["quantity"][i]
                 self.dump_json(data_info)
 
-
-        
-
-
 if __name__ == "__main__":
-    MyMainApp().run()
+    ItemTrackerApp().run()
