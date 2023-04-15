@@ -2,21 +2,28 @@ from kivy.app import App
 from kivy.lang import Builder
 from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.core.window import Window
-Window.clearcolor = (0.341, 0.341, 0.341, 1)
+Window.clearcolor = (0.231, 0.231, 0.231, 1)
 Window.size = (300, 600)
+#Window.fullscreen = 'auto'
 
 from kivy.uix.widget import Widget
-from kivy.properties import ObjectProperty
 from kivy.properties import StringProperty
 import json
-from kivy.uix.label import Label
+from kivy.clock import Clock
 
 class Item(Widget):
-    item_name = StringProperty('Item name')
-    item_count = StringProperty('0')
+    name = StringProperty()
+    quantity = StringProperty()
+    def __init__(self, name, quantity, **kwargs):
+        super().__init__(**kwargs)
+        self.name = name
+        self.quantity = quantity
 
 class Group(Widget):
-    group_name = StringProperty("Group name")
+    name = StringProperty()
+    def __init__(self, name, **kwargs):
+        super().__init__(**kwargs)
+        self.name = name
 
 
 class MainWindow(Screen):
@@ -42,32 +49,88 @@ kv = Builder.load_file("my.kv")
 
 class MyMainApp(App):
     def build(self):
+        Clock.schedule_once(self.update_on_start)
         return kv
     
+    def load_json(self):
+        with open("data.json", "r", encoding='utf-8') as file:
+            data = json.load(file)
+        return data
+    
+    def dump_json(self, data):
+        with open('data.json', 'w') as file:
+            json.dump(data, file, indent=2)
+    
     def add_group(self, group_name):
-        data_info = {}
-        #with open("data.json", "r", encoding='utf-8') as data:
-        #    data_info = json.load(data)
-        
-        data_info[group_name] = {"items" : ["zokni", "hlace", "gate"],
-                                   "quantity" : [1,4,5]}
-        
-        with open('data.json', 'w') as f:
-            json.dump(data_info, f, indent=2)
+        data_info = self.load_json()
+        data_info[group_name] = {"items" : [],"quantity" : []}
+        self.dump_json(data_info)
+
+    def update_on_start(self, dt):
+        layout = self.root.ids.main_window.ids.groups_layout
+        layout.clear_widgets()
+        data_info = self.load_json()
+        for group in data_info.keys():
+            layout.add_widget(Group(name=group))
     
     def update_main(self):
-        data_info = {}
-        with open("data.json", "r", encoding='utf-8') as data:
-            data_info = json.load(data)
-        print(data_info.keys())
-        #for group in data_info.keys():
-        group_widget = Group()
-        print(self)
-        print(self.root)
-        print(self.root.ids.main_window)
-        print(self.root.ids.main_window.ids.grid1)
-        print(self.root.ids.main_window.ids.grid1.ids.scroll1)
-        self.root.ids.main_window.ids.grid1.ids.scroll1.ids.groups_layout.add_widget(Label(text="Hello"))
+        layout = self.root.ids.main_window.ids.groups_layout
+        layout.clear_widgets()
+        data_info = self.load_json()
+        for group in data_info.keys():
+            layout.add_widget(Group(name=group))
+    
+    def delete_group(self, group_name):
+        data_info = self.load_json()
+        del data_info[group_name]
+        self.dump_json(data_info)
+
+    def update_second(self, group_name):
+        layout = self.root.ids.group_window
+        layout.ids.items_layout.clear_widgets()
+        layout.ids.group_window_name.text = group_name
+        data_info = self.load_json()
+        for i, item in enumerate(data_info[group_name]["items"]):
+            quantity = str(data_info[group_name]["quantity"][i])
+            new_item = Item(name=item, quantity=quantity)
+            layout.ids.items_layout.add_widget(new_item)
+    
+    def add_item_quantity(self, group, item):
+        data_info = self.load_json()
+        for i, elem in enumerate(data_info[group]["items"]):
+            if elem == item:
+                quant = data_info[group]["quantity"][i]
+                data_info[group]["quantity"][i] = quant + 1
+                self.dump_json(data_info)
+                break
+
+    def remove_item_quantity(self, group, item):
+        data_info = self.load_json()
+        for i, elem in enumerate(data_info[group]["items"]):
+            if elem == item:
+                quant = data_info[group]["quantity"][i]
+                if quant == 0:
+                    break
+                data_info[group]["quantity"][i] = quant - 1
+                self.dump_json(data_info)
+                break
+
+    def add_item(self, group, item):
+        data_info = self.load_json()
+        data_info[group]["items"].append(item)
+        data_info[group]["quantity"].append(0)
+        self.dump_json(data_info)
+    
+    def remove_item(self, group, item):
+        data_info = self.load_json()
+        for i, elem in enumerate(data_info[group]["items"]):
+            if item == elem:
+                del data_info[group]["items"][i]
+                del data_info[group]["quantity"][i]
+                self.dump_json(data_info)
+
+
+        
 
 
 if __name__ == "__main__":
