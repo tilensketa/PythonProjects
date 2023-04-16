@@ -2,7 +2,7 @@ bl_info = {
     "name": "Render Add-on",
     "description": "",
     "author": "Tilen Sketa",
-    "version": (0, 3, 0),
+    "version": (1, 0, 0),
     "blender": (3, 0, 1),
     "location": "3D View > Tools",
     "warning": "", # used for warning icon and text in addons panel
@@ -30,11 +30,24 @@ from bpy.types import (Panel,
                        PropertyGroup,
                        )
 
+def update_environment_strength(self, context):
+    bpy.data.worlds["World"].node_tree.nodes["Background"].inputs[1].default_value = self.float_environment_strength
+
 # ------------------------------------------------------------------------
 #    Scene Properties
 # ------------------------------------------------------------------------
 
 class MyProperties(PropertyGroup):
+    
+    float_environment_strength: FloatProperty(
+        name = "Environment Light Strength",
+        description="Strength of environment texture",
+        default = 1,
+        min = 0,
+        max = 2,
+        update = update_environment_strength,
+        step = 1
+        )
         
     int_around_angles: IntProperty(
         name = "Around Angles",
@@ -78,23 +91,21 @@ class MyProperties(PropertyGroup):
 #    Functions
 # ------------------------------------------------------------------------
 
-def setupEnvironment(black_white, part):
+def setup_environment(black_white, part, environment_strength):
     
-    # Get scene reference
+    # Get scene and shadow catcher reference
     scene = bpy.context.scene
-
-    # Reference shadow catcher
-    shadowCatcher = scene.objects["ShadowCatcher"]
+    shadow_catcher = scene.objects["ShadowCatcher"]
     
     # If black and white image is selected
     if black_white == True:
         # Turn off shadow catcher
-        shadowCatcher.hide_render = True
+        shadow_catcher.hide_render = True
         # Change rendere engine to eevee
         scene.render.engine = "BLENDER_EEVEE"
         # Set background image to false
         scene.render.film_transparent = False
-        # Make world black
+        # Make world black (environment strength to 0)
         bpy.data.worlds["World"].node_tree.nodes["Background"].inputs[1].default_value = 0
         # Reference emmision material
         emmision_mat = bpy.data.materials["Emmision"]
@@ -106,20 +117,20 @@ def setupEnvironment(black_white, part):
     # If black and white mode is not selected
     else:
         # Turn on shadow catcher
-        shadowCatcher.hide_render = False
+        shadow_catcher.hide_render = False
         # Change rendere engine to cycles
         scene.render.engine = 'CYCLES'
         # Set background image to false
         scene.render.film_transparent = True
         # Make world not black
-        bpy.data.worlds["World"].node_tree.nodes["Background"].inputs[1].default_value = 0.5
+        bpy.data.worlds["World"].node_tree.nodes["Background"].inputs[1].default_value = environment_strength
         # Delete materials
         part.data.materials.clear()
         # Set object material to Part Material
         part.data.materials.append(bpy.data.materials["Part Material"])
 
 
-def renderScene(numberOfPositions, maxOffset, around, output_dir, part):
+def render_scene(number_of_positions, max_offset, around, output_dir, part, environment_strength):
     
     # Get scene reference
     scene = bpy.context.scene
@@ -127,10 +138,10 @@ def renderScene(numberOfPositions, maxOffset, around, output_dir, part):
     step = 0
     
     # For every position
-    for pos in range(0, numberOfPositions):
+    for pos in range(0, number_of_positions):
         # Set object location
-        x = random.uniform(-maxOffset, maxOffset)
-        y = random.uniform(-maxOffset, maxOffset)
+        x = random.uniform(-max_offset, max_offset)
+        y = random.uniform(-max_offset, max_offset)
         part.location = x,y,part.location.z
         
         # Set object rotation
@@ -147,9 +158,9 @@ def renderScene(numberOfPositions, maxOffset, around, output_dir, part):
             # Change black/white to normal mode
             for j in range(2):
                 if j == 0:
-                    setupEnvironment(False, part)
+                    setup_environment(False, part, environment_strength)
                 else:
-                    setupEnvironment(True, part)
+                    setup_environment(True, part, environment_strength)
                 
                 # Configure output path
                 output_file_pattern_string = 'render%d.jpg'
@@ -161,10 +172,10 @@ def renderScene(numberOfPositions, maxOffset, around, output_dir, part):
                 step += 1
     
     # Set normal color mode
-    setupEnvironment(False, part)
+    setup_environment(False, part, environment_strength)
     scene.render.engine = "BLENDER_EEVEE"
     
-def setupBackground():
+def setup_background():
 
     # general settings
     bpy.context.scene.render.film_transparent = True
@@ -217,7 +228,7 @@ def setupBackground():
     compositor.links.new(scale_node.outputs[0], alpha_over_node.inputs[1])
     compositor.links.new(alpha_over_node.outputs[0], compositor.nodes["Composite"].inputs[0])
 
-def setupBasics():
+def setup_basics():
     
     # Get reference to scene
     scene = bpy.context.scene
@@ -289,16 +300,16 @@ class WM_OT_ExecuteButton(Operator):
         # Get scene and mytool reference
         scene = context.scene
         mytool = scene.my_tool
-        
-        setupBasics()
-        setupBackground()
-        # Do renderScene function
-        renderScene(
+
+        setup_basics()
+        setup_background()
+        render_scene(
             mytool.int_number_of_positions,
             mytool.int_max_offset,
             mytool.int_around_angles,
             mytool.string_path,
-            mytool.the_chosen_object)
+            mytool.the_chosen_object,
+            mytool.float_environment_strength)
         
         return {'FINISHED'}
 
@@ -327,6 +338,9 @@ class OBJECT_PT_CustomPanel(Panel):
         layout.prop(rd, "resolution_x", text="Resolution X")
         layout.prop(rd, "resolution_y", text="Resolution Y")
         layout.prop(rd, "resolution_percentage", text="%")
+        layout.prop(rd.image_settings, "file_format")
+        layout.prop(rd.image_settings, "color_depth")
+        layout.prop(mytool,  "float_environment_strength")
         layout.prop(mytool, "int_around_angles")
         layout.prop(mytool, "int_number_of_positions")
         layout.prop(mytool, "int_max_offset")
