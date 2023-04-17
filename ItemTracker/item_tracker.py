@@ -3,8 +3,8 @@ from kivy.lang import Builder
 from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.core.window import Window
 Window.clearcolor = (0.231, 0.231, 0.231, 1)
-#Window.size = (300, 600)
-Window.fullscreen = 'auto'
+Window.size = (300, 600)
+#Window.fullscreen = 'auto'
 
 from kivy.uix.widget import Widget
 from kivy.properties import StringProperty

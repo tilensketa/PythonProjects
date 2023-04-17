@@ -39,6 +39,7 @@ stock_data["NIO"] = {"amount" : 0, "price" : 0}
 with open('data.json', 'w') as f:
     json.dump(stock_data, f, indent=2)
 """
+
 class Stock():
     def __init__(self, symbol, amount, buy_price):
         self.symbol = symbol

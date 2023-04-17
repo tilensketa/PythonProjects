@@ -8,8 +8,8 @@
     "price": 3
   },
   "TSLA": {
-    "amount": 0,
-    "price": 0
+    "amount": 10.0,
+    "price": 185.0
   },
   "GOOG": {
     "amount": 0,
@@ -42,5 +42,9 @@
   "AMZN": {
     "amount": 2.0,
     "price": 101.1
+  },
+  "AMD": {
+    "amount": 100.0,
+    "price": 91.75
   }
 }
