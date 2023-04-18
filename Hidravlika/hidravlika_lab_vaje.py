@@ -57,7 +57,7 @@ izkoristek_crpalke = (meritev100.pretok() / meritev0.pretok()) * 100
 print("1.1")
 print(f"Pretok pri 0 bar: {meritev0.pretok()} l/min")
 print(f"Pretok pri 100 bar: {meritev100.pretok()} l/min")
-print(f"Izkoristek črpalke: {izkoristek_crpalke} %")
+print(f"Izkoristek crpalke: {izkoristek_crpalke} %")
 
 # 1.2
 
@@ -191,21 +191,21 @@ prevzemnost_filtra = specificna_prevzemnost_filtra * povrsina_filtra
 masa_4 = 1 * pow(10, -9)
 masa_6 = 5 * pow(10, -9)
 masa_14 = 69 * pow(10, -9)
-st_delcev_4 = (320 + 640) / 2
-st_delcev_6 = (80 + 160) / 2
-st_delcev_14 = (5 + 10) / 2
+st_delcev_4 = 640 # (320 + 640) / 2
+st_delcev_6 = 160 # (80 + 160) / 2
+st_delcev_14 = 10 # (5 + 10) / 2
 
 masa = masa_4 * st_delcev_4 + masa_6 * st_delcev_6 + masa_14 * st_delcev_14
 
-preciscenih_litrov = prevzemnost_filtra / masa
+preciscenih_litrov = (prevzemnost_filtra / masa) / 1000
 
 print("1.2")
 print(f"Povrsina filtra : {povrsina_filtra} m2")
 print(f"Prevzemnost filtra : {prevzemnost_filtra} g")
-print(f"Stevilo delcev > 4 : {st_delcev_4}")
-print(f"Stevilo delcev > 6 : {st_delcev_6}")
-print(f"Stevilo delcev > 14 : {st_delcev_14}")
-print(f"Masa delcev na 1ml : {masa} g")
+print(f"Stevilo delcev > 4 µm : {st_delcev_4}")
+print(f"Stevilo delcev > 6 µm : {st_delcev_6}")
+print(f"Stevilo delcev > 14 µm : {st_delcev_14}")
+print(f"Masa delcev na 1 ml : {masa} g")
 print(f"Precistimo lahko : {preciscenih_litrov} l")
 
 # 2.
