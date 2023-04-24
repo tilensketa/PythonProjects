@@ -91,47 +91,25 @@ class MyProperties(PropertyGroup):
 #    Functions
 # ------------------------------------------------------------------------
 
-def setup_environment(black_white, part, environment_strength):
-    
-    # Get scene and shadow catcher reference
+def prepare_environment(shadow_catcher_bool: bool, renderer: str, background_image_bool: bool, environment_strength: float):
+    """Enable/disable shadow catcher and background image, set render engine and environment strength, append material"""
+    # Get refrences
     scene = bpy.context.scene
     shadow_catcher = scene.objects["ShadowCatcher"]
-    
-    # If black and white image is selected
-    if black_white == True:
-        # Turn off shadow catcher
-        shadow_catcher.hide_render = True
-        # Change rendere engine to eevee
-        scene.render.engine = "BLENDER_EEVEE"
-        # Set background image to false
-        scene.render.film_transparent = False
-        # Make world black (environment strength to 0)
-        bpy.data.worlds["World"].node_tree.nodes["Background"].inputs[1].default_value = 0
-        # Reference emmision material
-        emmision_mat = bpy.data.materials["Emmision"]
-        # Delete materials
-        part.data.materials.clear()
-        # Set object material to emmision
-        part.data.materials.append(emmision_mat)
+    # Turn on/off shadow catcher, change render engine, background image on/off
+    shadow_catcher.hide_render = shadow_catcher_bool
+    scene.render.engine = renderer
+    scene.render.film_transparent = background_image_bool
+    # Set environment texture strength, clear materials and append material to object
+    bpy.data.worlds["World"].node_tree.nodes["Background"].inputs[1].default_value = environment_strength
 
-    # If black and white mode is not selected
-    else:
-        # Turn on shadow catcher
-        shadow_catcher.hide_render = False
-        # Change rendere engine to cycles
-        scene.render.engine = 'CYCLES'
-        # Set background image to false
-        scene.render.film_transparent = True
-        # Make world not black
-        bpy.data.worlds["World"].node_tree.nodes["Background"].inputs[1].default_value = environment_strength
-        # Delete materials
-        part.data.materials.clear()
-        # Set object material to Part Material
-        part.data.materials.append(bpy.data.materials["Part Material"])
+def prepare_object(part: bpy.types.Object, material_name: str):
+    """Clear object materials and append material"""
+    part.data.materials.clear()
+    part.data.materials.append(bpy.data.materials[material_name])
 
-
-def render_scene(number_of_positions, max_offset, around, output_dir, part, environment_strength):
-    
+def render_scene(number_of_positions: int, max_offset: int, around: int, output_dir: str, part: bpy.types.Object, environment_strength: float):
+    """Position, rotate object and make render"""
     # Get scene reference
     scene = bpy.context.scene
     
@@ -140,27 +118,48 @@ def render_scene(number_of_positions, max_offset, around, output_dir, part, envi
     # For every position
     for pos in range(0, number_of_positions):
         # Set object location
+        angles = []
+        angle = random.uniform(0, math.radians(360))
+        for i, obj in enumerate(bpy.data.collections["Collection 1"].all_objects):
+            angle += math.radians(360/len(bpy.data.collections["Collection 1"].all_objects))
+            angles.append(angle)
+        for i, obj in enumerate(bpy.data.collections["Collection 1"].all_objects):
+            r = random.uniform(max_offset/2, max_offset)
+            ang = angles[random.randint(0, len(angles) - 1)]
+            angles.remove(ang)
+            x = r * math.cos(ang)
+            y = r * math.sin(ang)
+            obj.location = x,y,obj.location.z
         x = random.uniform(-max_offset, max_offset)
         y = random.uniform(-max_offset, max_offset)
         part.location = x,y,part.location.z
         
         # Set object rotation
-        rx = math.radians(90)
         rz = math.radians(random.randint(0, 359))
-        part.rotation_euler = rx,0,rz
+        for obj in bpy.data.collections["Collection 1"].all_objects:
+            obj.rotation_euler[2] = rz
+        part.rotation_euler[2] = rz
         
         # For every angle in around
         for i in range(around):
             # Calculate angle in radians
             angle = math.radians(360 / around)
             # Set part z rotation
+            for obj in bpy.data.collections["Collection 1"].all_objects:
+                obj.rotation_euler[2] += angle
             part.rotation_euler[2] += angle
             # Change black/white to normal mode
             for j in range(2):
                 if j == 0:
-                    setup_environment(False, part, environment_strength)
+                    prepare_environment(False, "CYCLES", True, environment_strength)
+                    for obj in bpy.data.collections["Collection 1"].all_objects:
+                        prepare_object(obj, "Part Material")
+                    prepare_object(part, "Part Material")
                 else:
-                    setup_environment(True, part, environment_strength)
+                    prepare_environment(True, "BLENDER_EEVEE", False, 0)
+                    for obj in bpy.data.collections["Collection 1"].all_objects:
+                        prepare_object(obj, "Emmision")
+                    prepare_object(part, "Emmision")
                 
                 # Configure output path
                 output_file_pattern_string = 'render%d.jpg'
@@ -168,14 +167,16 @@ def render_scene(number_of_positions, max_offset, around, output_dir, part, envi
                 # Render image and save it
                 scene.render.filepath = os.path.join(output_dir, (output_file_pattern_string % step))
                 bpy.ops.render.render(write_still = True)
-                    
                 step += 1
     
     # Set normal color mode
-    setup_environment(False, part, environment_strength)
-    scene.render.engine = "BLENDER_EEVEE"
+    prepare_environment(False, "BLENDER_EEVEE", True, environment_strength)
+    for obj in bpy.data.collections["Collection 1"].all_objects:
+        prepare_object(obj, "Part Material")
+    prepare_object(part, "Part Material")
     
 def setup_background():
+    """Make background image on render"""
 
     # general settings
     bpy.context.scene.render.film_transparent = True
@@ -229,7 +230,7 @@ def setup_background():
     compositor.links.new(alpha_over_node.outputs[0], compositor.nodes["Composite"].inputs[0])
 
 def setup_basics():
-    
+    """Delete all materials except Part Material, create Emmision material, delete camera and light and create shadow catcher"""
     # Get reference to scene
     scene = bpy.context.scene
     
