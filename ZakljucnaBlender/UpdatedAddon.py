@@ -16,6 +16,8 @@ import math
 import os
 import random
 import sys
+from mathutils import Color
+import colorsys
 
 from bpy.props import (StringProperty,
                        BoolProperty,
@@ -152,14 +154,15 @@ def render_scene(number_of_positions: int, max_offset: int, around: int, output_
             for j in range(2):
                 if j == 0:
                     prepare_environment(False, "CYCLES", True, environment_strength)
-                    for obj in bpy.data.collections["Collection 1"].all_objects:
-                        prepare_object(obj, "Part Material")
-                    prepare_object(part, "Part Material")
+                    for i, obj in enumerate(bpy.data.collections["Collection 1"].all_objects):
+                        prepare_object(obj, "Part Material " + str(i))
+                    #prepare_object(part, "Part Material")
                 else:
                     prepare_environment(True, "BLENDER_EEVEE", False, 0)
-                    for obj in bpy.data.collections["Collection 1"].all_objects:
-                        prepare_object(obj, "Emmision")
-                    prepare_object(part, "Emmision")
+                    for i, obj in enumerate(bpy.data.collections["Collection 1"].all_objects):
+                        prepare_object(obj, "Emmision " + str(i))
+                        print("Emmision " + str(i))
+                    #prepare_object(part, "Emmision")
                 
                 # Configure output path
                 output_file_pattern_string = 'render%d.jpg'
@@ -171,9 +174,9 @@ def render_scene(number_of_positions: int, max_offset: int, around: int, output_
     
     # Set normal color mode
     prepare_environment(False, "BLENDER_EEVEE", True, environment_strength)
-    for obj in bpy.data.collections["Collection 1"].all_objects:
-        prepare_object(obj, "Part Material")
-    prepare_object(part, "Part Material")
+    for i, obj in enumerate(bpy.data.collections["Collection 1"].all_objects):
+        prepare_object(obj, "Part Material " + str(i))
+    #prepare_object(part, "Part Material")
     
 def setup_background():
     """Make background image on render"""
@@ -235,15 +238,25 @@ def setup_basics():
     scene = bpy.context.scene
     
     # Remove all materials that are not Part Material
+    number_of_objects = 0
+    for i, obj in enumerate(bpy.data.collections["Collection 1"].all_objects):
+        number_of_objects += 1
+    materials = []
+    for i in range(number_of_objects):
+        materials.append("Part Material " + str(i))
+    print(materials)
     for material in bpy.data.materials:
-        if material.name != "Part Material":
+        if material.name not in materials:
             material.user_clear()
             bpy.data.materials.remove(material)
     
     # Create emmision material
-    emmision_mat = bpy.data.materials.new(name="Emmision")
-    emmision_mat.use_nodes = True
-    emmision_mat.node_tree.nodes["Principled BSDF"].inputs[19].default_value = (1, 1, 1, 1)
+    for i, obj in enumerate(bpy.data.collections["Collection 1"].all_objects):
+        emmision_mat = bpy.data.materials.new(name="Emmision "+ str(i))
+        emmision_mat.use_nodes = True
+        h = (1 / number_of_objects) * i
+        color = colorsys.hsv_to_rgb(h, 1, 1)
+        emmision_mat.node_tree.nodes["Principled BSDF"].inputs[19].default_value = color[0], color[1], color[2], 1
     
     # Deselect all objects
     for obj in bpy.context.selected_objects:
