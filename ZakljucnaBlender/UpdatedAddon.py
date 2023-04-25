@@ -82,10 +82,10 @@ class MyProperties(PropertyGroup):
         subtype='FILE_PATH'
         )
         
-    the_chosen_object : PointerProperty(
-        name="Object",
-        description="Choose object",
-        type=bpy.types.Object
+    the_chosen_collection : PointerProperty(
+        name="Collection",
+        description="Choose collection",
+        type=bpy.types.Collection
         )
         
 
@@ -102,7 +102,7 @@ def prepare_environment(shadow_catcher_bool: bool, renderer: str, background_ima
     shadow_catcher.hide_render = shadow_catcher_bool
     scene.render.engine = renderer
     scene.render.film_transparent = background_image_bool
-    # Set environment texture strength, clear materials and append material to object
+    # Set environment texture strength
     bpy.data.worlds["World"].node_tree.nodes["Background"].inputs[1].default_value = environment_strength
 
 def prepare_object(part: bpy.types.Object, material_name: str):
@@ -110,7 +110,7 @@ def prepare_object(part: bpy.types.Object, material_name: str):
     part.data.materials.clear()
     part.data.materials.append(bpy.data.materials[material_name])
 
-def render_scene(number_of_positions: int, max_offset: int, around: int, output_dir: str, part: bpy.types.Object, environment_strength: float):
+def render_scene(number_of_positions: int, max_offset: int, around: int, output_dir: str, collection: bpy.types.Collection, environment_strength: float):
     """Position, rotate object and make render"""
     # Get scene reference
     scene = bpy.context.scene
@@ -118,51 +118,43 @@ def render_scene(number_of_positions: int, max_offset: int, around: int, output_
     step = 0
     
     # For every position
-    for pos in range(0, number_of_positions):
+    for pos in range(number_of_positions):
         # Set object location
         angles = []
         angle = random.uniform(0, math.radians(360))
-        for i, obj in enumerate(bpy.data.collections["Collection 1"].all_objects):
-            angle += math.radians(360/len(bpy.data.collections["Collection 1"].all_objects))
+        for obj in bpy.data.collections[collection.name].all_objects:
+            angle += math.radians(360/len(bpy.data.collections[collection.name].all_objects))
             angles.append(angle)
-        for i, obj in enumerate(bpy.data.collections["Collection 1"].all_objects):
+        for obj in bpy.data.collections[collection.name].all_objects:
             r = random.uniform(max_offset/2, max_offset)
             ang = angles[random.randint(0, len(angles) - 1)]
             angles.remove(ang)
             x = r * math.cos(ang)
             y = r * math.sin(ang)
             obj.location = x,y,obj.location.z
-        x = random.uniform(-max_offset, max_offset)
-        y = random.uniform(-max_offset, max_offset)
-        part.location = x,y,part.location.z
         
         # Set object rotation
-        rz = math.radians(random.randint(0, 359))
-        for obj in bpy.data.collections["Collection 1"].all_objects:
+        for obj in bpy.data.collections[collection.name].all_objects:
+            rz = math.radians(random.randint(0, 359))
             obj.rotation_euler[2] = rz
-        part.rotation_euler[2] = rz
         
         # For every angle in around
         for i in range(around):
             # Calculate angle in radians
             angle = math.radians(360 / around)
-            # Set part z rotation
-            for obj in bpy.data.collections["Collection 1"].all_objects:
+            # Set object's z rotation
+            for obj in bpy.data.collections[collection.name].all_objects:
                 obj.rotation_euler[2] += angle
-            part.rotation_euler[2] += angle
             # Change black/white to normal mode
             for j in range(2):
                 if j == 0:
                     prepare_environment(False, "CYCLES", True, environment_strength)
-                    for i, obj in enumerate(bpy.data.collections["Collection 1"].all_objects):
+                    for i, obj in enumerate(bpy.data.collections[collection.name].all_objects):
                         prepare_object(obj, "Part Material " + str(i))
-                    #prepare_object(part, "Part Material")
                 else:
                     prepare_environment(True, "BLENDER_EEVEE", False, 0)
-                    for i, obj in enumerate(bpy.data.collections["Collection 1"].all_objects):
+                    for i, obj in enumerate(bpy.data.collections[collection.name].all_objects):
                         prepare_object(obj, "Emmision " + str(i))
-                        print("Emmision " + str(i))
-                    #prepare_object(part, "Emmision")
                 
                 # Configure output path
                 output_file_pattern_string = 'render%d.jpg'
@@ -174,9 +166,8 @@ def render_scene(number_of_positions: int, max_offset: int, around: int, output_
     
     # Set normal color mode
     prepare_environment(False, "BLENDER_EEVEE", True, environment_strength)
-    for i, obj in enumerate(bpy.data.collections["Collection 1"].all_objects):
+    for i, obj in enumerate(bpy.data.collections[collection.name].all_objects):
         prepare_object(obj, "Part Material " + str(i))
-    #prepare_object(part, "Part Material")
     
 def setup_background():
     """Make background image on render"""
@@ -232,31 +223,38 @@ def setup_background():
     compositor.links.new(scale_node.outputs[0], alpha_over_node.inputs[1])
     compositor.links.new(alpha_over_node.outputs[0], compositor.nodes["Composite"].inputs[0])
 
-def setup_basics():
-    """Delete all materials except Part Material, create Emmision material, delete camera and light and create shadow catcher"""
+def setup_basics(collection: bpy.types.Collection):
+    """Delete all materials except Part Materials, create Emmision materials, delete camera and light and create shadow catcher"""
     # Get reference to scene
     scene = bpy.context.scene
     
     # Remove all materials that are not Part Material
-    number_of_objects = 0
-    for i, obj in enumerate(bpy.data.collections["Collection 1"].all_objects):
-        number_of_objects += 1
     materials = []
+    number_of_objects = len(bpy.data.collections[collection.name].all_objects)
     for i in range(number_of_objects):
         materials.append("Part Material " + str(i))
-    print(materials)
+
     for material in bpy.data.materials:
         if material.name not in materials:
             material.user_clear()
             bpy.data.materials.remove(material)
     
-    # Create emmision material
-    for i, obj in enumerate(bpy.data.collections["Collection 1"].all_objects):
-        emmision_mat = bpy.data.materials.new(name="Emmision "+ str(i))
-        emmision_mat.use_nodes = True
-        h = (1 / number_of_objects) * i
-        color = colorsys.hsv_to_rgb(h, 1, 1)
-        emmision_mat.node_tree.nodes["Principled BSDF"].inputs[19].default_value = color[0], color[1], color[2], 1
+    # Create emmision materials
+    if number_of_objects > 1:
+        for i, obj in enumerate(bpy.data.collections[collection.name].all_objects):
+            emmision_mat = bpy.data.materials.new(name="Emmision "+ str(i))
+            emmision_mat.use_nodes = True
+            h = (1 / number_of_objects) * i
+            hsv_color = colorsys.hsv_to_rgb(h, 1, 1)
+            rgb_color = (hsv_color[0], hsv_color[1], hsv_color[2], 1)
+            emmision_mat.node_tree.nodes["Principled BSDF"].inputs[19].default_value = rgb_color
+    else:
+        for i, obj in enumerate(bpy.data.collections[collection.name].all_objects):
+            emmision_mat = bpy.data.materials.new(name="Emmision "+ str(i))
+            emmision_mat.use_nodes = True
+            hsv_color = colorsys.hsv_to_rgb(1, 0, 1)
+            rgb_color = (hsv_color[0], hsv_color[1], hsv_color[2], 1)
+            emmision_mat.node_tree.nodes["Principled BSDF"].inputs[19].default_value = rgb_color
     
     # Deselect all objects
     for obj in bpy.context.selected_objects:
@@ -315,14 +313,14 @@ class WM_OT_ExecuteButton(Operator):
         scene = context.scene
         mytool = scene.my_tool
 
-        setup_basics()
+        setup_basics(mytool.the_chosen_collection)
         setup_background()
         render_scene(
             mytool.int_number_of_positions,
             mytool.int_max_offset,
             mytool.int_around_angles,
             mytool.string_path,
-            mytool.the_chosen_object,
+            mytool.the_chosen_collection,
             mytool.float_environment_strength)
         
         return {'FINISHED'}
@@ -358,7 +356,7 @@ class OBJECT_PT_CustomPanel(Panel):
         layout.prop(mytool, "int_around_angles")
         layout.prop(mytool, "int_number_of_positions")
         layout.prop(mytool, "int_max_offset")
-        layout.prop(mytool, "the_chosen_object")
+        layout.prop(mytool, "the_chosen_collection")
         layout.prop(mytool, "string_path")
         layout.operator("wm.execute_button")
 
