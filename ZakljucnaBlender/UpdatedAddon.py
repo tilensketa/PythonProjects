@@ -87,11 +87,17 @@ class MyProperties(PropertyGroup):
         description="Choose collection",
         type=bpy.types.Collection
         )
-        
 
 # ------------------------------------------------------------------------
 #    Functions
 # ------------------------------------------------------------------------
+
+def verify_collection(collection: bpy.types.Collection):
+    """Verify collection and if collection size is 0 break"""
+    number_of_objects = len(bpy.data.collections[collection.name].all_objects)
+    print(number_of_objects)
+    if number_of_objects < 1:
+        raise ValueError("Collection that is selected is empty. Choose different collection or add objects in this collection")
 
 def prepare_environment(shadow_catcher_bool: bool, renderer: str, background_image_bool: bool, environment_strength: float):
     """Enable/disable shadow catcher and background image, set render engine and environment strength, append material"""
@@ -109,6 +115,28 @@ def prepare_object(part: bpy.types.Object, material_name: str):
     """Clear object materials and append material"""
     part.data.materials.clear()
     part.data.materials.append(bpy.data.materials[material_name])
+    
+def object_location(collection: bpy.types.Collection, max_offset: int):
+    """Foreach object in collection define object's location"""
+    angles = []
+    angle = random.uniform(0, math.radians(360))
+    number_of_objects = len(bpy.data.collections[collection.name].all_objects)
+    for i in range(number_of_objects):
+        angle += math.radians(360 / number_of_objects)
+        angles.append(angle)
+    for obj in bpy.data.collections[collection.name].all_objects:
+        r = random.uniform(max_offset/2, max_offset)
+        ang = angles[random.randint(0, len(angles) - 1)]
+        angles.remove(ang)
+        x = r * math.cos(ang)
+        y = r * math.sin(ang)
+        obj.location = x,y,obj.location.z
+
+def object_rotation(collection: bpy.types.Collection):
+    """Foreach object in collection define object's rotation"""
+    for obj in bpy.data.collections[collection.name].all_objects:
+        rz = math.radians(random.randint(0, 359))
+        obj.rotation_euler[2] = rz
 
 def render_scene(number_of_positions: int, max_offset: int, around: int, output_dir: str, collection: bpy.types.Collection, environment_strength: float):
     """Position, rotate object and make render"""
@@ -119,32 +147,19 @@ def render_scene(number_of_positions: int, max_offset: int, around: int, output_
     
     # For every position
     for pos in range(number_of_positions):
-        # Set object location
-        angles = []
-        angle = random.uniform(0, math.radians(360))
-        for obj in bpy.data.collections[collection.name].all_objects:
-            angle += math.radians(360/len(bpy.data.collections[collection.name].all_objects))
-            angles.append(angle)
-        for obj in bpy.data.collections[collection.name].all_objects:
-            r = random.uniform(max_offset/2, max_offset)
-            ang = angles[random.randint(0, len(angles) - 1)]
-            angles.remove(ang)
-            x = r * math.cos(ang)
-            y = r * math.sin(ang)
-            obj.location = x,y,obj.location.z
         
-        # Set object rotation
-        for obj in bpy.data.collections[collection.name].all_objects:
-            rz = math.radians(random.randint(0, 359))
-            obj.rotation_euler[2] = rz
+        # Set objects location and rotation
+        object_location(collection, max_offset)
+        object_rotation(collection)
         
         # For every angle in around
         for i in range(around):
-            # Calculate angle in radians
+            
+            # Calculate angle in radians and set objects z-rotation
             angle = math.radians(360 / around)
-            # Set object's z rotation
             for obj in bpy.data.collections[collection.name].all_objects:
                 obj.rotation_euler[2] += angle
+                
             # Change black/white to normal mode
             for j in range(2):
                 if j == 0:
@@ -223,39 +238,9 @@ def setup_background():
     compositor.links.new(scale_node.outputs[0], alpha_over_node.inputs[1])
     compositor.links.new(alpha_over_node.outputs[0], compositor.nodes["Composite"].inputs[0])
 
-def setup_basics(collection: bpy.types.Collection):
-    """Delete all materials except Part Materials, create Emmision materials, delete camera and light and create shadow catcher"""
-    # Get reference to scene
+def delete_and_hide_stuff():
+    """Delete camera and hide light source"""
     scene = bpy.context.scene
-    
-    # Remove all materials that are not Part Material
-    materials = []
-    number_of_objects = len(bpy.data.collections[collection.name].all_objects)
-    for i in range(number_of_objects):
-        materials.append("Part Material " + str(i))
-
-    for material in bpy.data.materials:
-        if material.name not in materials:
-            material.user_clear()
-            bpy.data.materials.remove(material)
-    
-    # Create emmision materials
-    if number_of_objects > 1:
-        for i, obj in enumerate(bpy.data.collections[collection.name].all_objects):
-            emmision_mat = bpy.data.materials.new(name="Emmision "+ str(i))
-            emmision_mat.use_nodes = True
-            h = (1 / number_of_objects) * i
-            hsv_color = colorsys.hsv_to_rgb(h, 1, 1)
-            rgb_color = (hsv_color[0], hsv_color[1], hsv_color[2], 1)
-            emmision_mat.node_tree.nodes["Principled BSDF"].inputs[19].default_value = rgb_color
-    else:
-        for i, obj in enumerate(bpy.data.collections[collection.name].all_objects):
-            emmision_mat = bpy.data.materials.new(name="Emmision "+ str(i))
-            emmision_mat.use_nodes = True
-            hsv_color = colorsys.hsv_to_rgb(1, 0, 1)
-            rgb_color = (hsv_color[0], hsv_color[1], hsv_color[2], 1)
-            emmision_mat.node_tree.nodes["Principled BSDF"].inputs[19].default_value = rgb_color
-    
     # Deselect all objects
     for obj in bpy.context.selected_objects:
         obj.select_set(False)
@@ -270,6 +255,10 @@ def setup_basics(collection: bpy.types.Collection):
     
     # Delete camera     
     bpy.ops.object.delete()
+
+def setup_shadow_catcher():
+    """If there is no shadow catcher add one and configure it"""
+    scene = bpy.context.scene
     
     # Get reference to shadowCatcher
     catcher = bpy.context.scene.objects.get("ShadowCatcher")
@@ -299,6 +288,40 @@ def setup_basics(collection: bpy.types.Collection):
         catcher.is_shadow_catcher = True
         scene.render.engine = "BLENDER_EEVEE"
 
+def setup_basics(collection: bpy.types.Collection):
+    """Delete all materials except Part Materials, create Emmision materials, delete camera and light and create shadow catcher"""
+    # Get reference to scene
+    scene = bpy.context.scene
+    
+    # Remove all materials that are not Part Material
+    materials = []
+    number_of_objects = len(bpy.data.collections[collection.name].all_objects)
+    for i in range(number_of_objects):
+        materials.append("Part Material " + str(i))
+        
+    for material in bpy.data.materials:
+        if material.name not in materials:
+            material.user_clear()
+            bpy.data.materials.remove(material)
+    
+    # Create emmision materials
+    for i, obj in enumerate(bpy.data.collections[collection.name].all_objects):
+        emmision_mat = bpy.data.materials.new(name="Emmision "+ str(i))
+        emmision_mat.use_nodes = True
+        # If there are more than one object randomize color, else make color white
+        if number_of_objects > 1:
+            h = (1 / number_of_objects) * i
+        else:
+            h = 1
+        hsv_color = colorsys.hsv_to_rgb(h, 1, 1)
+        rgb_color = (hsv_color[0], hsv_color[1], hsv_color[2], 1)
+        emmision_mat.node_tree.nodes["Principled BSDF"].inputs[19].default_value = rgb_color
+    
+    # Delete camera and hide light source
+    delete_and_hide_stuff()
+    # Make shadow catcher if there is none and configure it
+    setup_shadow_catcher()
+
 # ------------------------------------------------------------------------
 #    Operators
 # ------------------------------------------------------------------------
@@ -313,6 +336,7 @@ class WM_OT_ExecuteButton(Operator):
         scene = context.scene
         mytool = scene.my_tool
 
+        verify_collection(mytool.the_chosen_collection)
         setup_basics(mytool.the_chosen_collection)
         setup_background()
         render_scene(
