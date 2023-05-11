@@ -95,7 +95,6 @@ class MyProperties(PropertyGroup):
 def verify_collection(collection: bpy.types.Collection):
     """Verify collection and if collection size is 0 break"""
     number_of_objects = len(bpy.data.collections[collection.name].all_objects)
-    print(number_of_objects)
     if number_of_objects < 1:
         raise ValueError("Collection that is selected is empty. Choose different collection or add objects in this collection")
 
@@ -160,12 +159,12 @@ def render_scene(number_of_positions: int, max_offset: int, around: int, output_
             for obj in bpy.data.collections[collection.name].all_objects:
                 obj.rotation_euler[2] += angle
                 
-            # Change black/white to normal mode
+            # Change black/white or normal mode
             for j in range(2):
                 if j == 0:
                     prepare_environment(False, "CYCLES", True, environment_strength)
-                    for i, obj in enumerate(bpy.data.collections[collection.name].all_objects):
-                        prepare_object(obj, "Part Material " + str(i))
+                    for obj in bpy.data.collections[collection.name].all_objects:
+                        prepare_object(obj, obj.name + "_MAT")
                 else:
                     prepare_environment(True, "BLENDER_EEVEE", False, 0)
                     for i, obj in enumerate(bpy.data.collections[collection.name].all_objects):
@@ -181,8 +180,8 @@ def render_scene(number_of_positions: int, max_offset: int, around: int, output_
     
     # Set normal color mode
     prepare_environment(False, "BLENDER_EEVEE", True, environment_strength)
-    for i, obj in enumerate(bpy.data.collections[collection.name].all_objects):
-        prepare_object(obj, "Part Material " + str(i))
+    for obj in bpy.data.collections[collection.name].all_objects:
+        prepare_object(obj, obj.name + "_MAT")
     
 def setup_background():
     """Make background image on render"""
@@ -289,18 +288,15 @@ def setup_shadow_catcher():
         scene.render.engine = "BLENDER_EEVEE"
 
 def setup_basics(collection: bpy.types.Collection):
-    """Delete all materials except Part Materials, create Emmision materials, delete camera and light and create shadow catcher"""
+    """Delete all materials except _MAT materials, create Emmision materials, delete camera and light and create shadow catcher"""
     # Get reference to scene
     scene = bpy.context.scene
     
-    # Remove all materials that are not Part Material
-    materials = []
     number_of_objects = len(bpy.data.collections[collection.name].all_objects)
-    for i in range(number_of_objects):
-        materials.append("Part Material " + str(i))
-        
+    
+    # Remove all materials that are not _MAT
     for material in bpy.data.materials:
-        if material.name not in materials:
+        if material.name[-4:] != "_MAT":
             material.user_clear()
             bpy.data.materials.remove(material)
     
@@ -312,7 +308,7 @@ def setup_basics(collection: bpy.types.Collection):
         if number_of_objects > 1:
             h = (1 / number_of_objects) * i
             s = 1
-        elif number_of_objects == 1:
+        else:
             h = 1
             s = 0
         hsv_color = colorsys.hsv_to_rgb(h, s, 1)
@@ -356,7 +352,7 @@ class WM_OT_ExecuteButton(Operator):
 # ------------------------------------------------------------------------
 
 class OBJECT_PT_CustomPanel(Panel):
-    bl_label = "My Panel"
+    bl_label = "Render Panel"
     bl_idname = "OBJECT_PT_custom_panel"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
