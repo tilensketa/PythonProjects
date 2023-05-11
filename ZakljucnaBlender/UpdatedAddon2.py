@@ -16,7 +16,6 @@ import math
 import os
 import random
 import sys
-from mathutils import Color
 import colorsys
 
 from bpy.props import (StringProperty,
@@ -99,7 +98,7 @@ def verify_collection(collection: bpy.types.Collection):
         raise ValueError("Collection that is selected is empty. Choose different collection or add objects in this collection")
 
 def prepare_environment(shadow_catcher_bool: bool, renderer: str, background_image_bool: bool, environment_strength: float):
-    """Enable/disable shadow catcher and background image, set render engine and environment strength, append material"""
+    """Enable/disable shadow catcher and background image, set render engine and environment strength"""
     # Get refrences
     scene = bpy.context.scene
     shadow_catcher = scene.objects["ShadowCatcher"]
