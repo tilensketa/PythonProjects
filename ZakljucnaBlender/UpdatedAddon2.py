@@ -19,11 +19,8 @@ import sys
 import colorsys
 
 from bpy.props import (StringProperty,
-                       BoolProperty,
                        IntProperty,
                        FloatProperty,
-                       FloatVectorProperty,
-                       EnumProperty,
                        PointerProperty,
                        )
 from bpy.types import (Panel,
@@ -32,6 +29,7 @@ from bpy.types import (Panel,
                        )
 
 def update_environment_strength(self, context):
+    """Update environmet texture strength"""
     bpy.data.worlds["World"].node_tree.nodes["Background"].inputs[1].default_value = self.float_environment_strength
 
 # ------------------------------------------------------------------------
@@ -63,7 +61,7 @@ class MyProperties(PropertyGroup):
         description="Number of object positions",
         default = 1,
         min = 1,
-        max = 10
+        max = 1000000
         )
         
     int_max_offset: IntProperty(
@@ -92,14 +90,14 @@ class MyProperties(PropertyGroup):
 # ------------------------------------------------------------------------
 
 def verify_collection(collection: bpy.types.Collection):
-    """Verify collection and if collection size is 0 break"""
+    """Verify collection and if collection is empty raise error"""
     number_of_objects = len(bpy.data.collections[collection.name].all_objects)
     if number_of_objects < 1:
         raise ValueError("Collection that is selected is empty. Choose different collection or add objects in this collection")
 
 def prepare_environment(shadow_catcher_bool: bool, renderer: str, background_image_bool: bool, environment_strength: float):
     """Enable/disable shadow catcher and background image, set render engine and environment strength"""
-    # Get refrences
+    # Get references
     scene = bpy.context.scene
     shadow_catcher = scene.objects["ShadowCatcher"]
     # Turn on/off shadow catcher, change render engine, background image on/off
@@ -138,21 +136,15 @@ def object_rotation(collection: bpy.types.Collection):
 
 def render_scene(number_of_positions: int, max_offset: int, around: int, output_dir: str, collection: bpy.types.Collection, environment_strength: float):
     """Position, rotate object and make render"""
-    # Get scene reference
     scene = bpy.context.scene
     
     step = 0
-    
-    # For every position
     for pos in range(number_of_positions):
-        
         # Set objects location and rotation
         object_location(collection, max_offset)
         object_rotation(collection)
         
-        # For every angle in around
         for i in range(around):
-            
             # Calculate angle in radians and set objects z-rotation
             angle = math.radians(360 / around)
             for obj in bpy.data.collections[collection.name].all_objects:
@@ -185,16 +177,16 @@ def render_scene(number_of_positions: int, max_offset: int, around: int, output_
 def setup_background():
     """Make background image on render"""
 
-    # general settings
+    # General settings
     bpy.context.scene.render.film_transparent = True
     bpy.context.scene.use_nodes = True
     compositor = bpy.context.scene.node_tree
 
-    #get background image struct
+    # Get background image struct
     active_cam = bpy.context.scene.camera.name
     bg_images = bpy.data.objects[active_cam].data.background_images.items()
 
-    # get background image data, if it exists in struct
+    # Get background image data, if it exists in struct
     try:
         image = bg_images[0][1].image
         image_scale = bg_images[0][1].scale
@@ -202,7 +194,7 @@ def setup_background():
         sys.exit("No Background Found")
 
 
-    # create new compositor node, if it not already exists
+    # Create new compositor node, if it not already exists
     node_names = {"bg_image_node":"CompositorNodeImage", "alpha_over_node":"CompositorNodeAlphaOver", "frame_method_node":"CompositorNodeScale", "scale_node":"CompositorNodeScale"}
     current_nodes = compositor.nodes.keys()
 
@@ -212,7 +204,7 @@ def setup_background():
             node.name = name
             
 
-    #edit compositor nodes  
+    # Edit compositor nodes  
     bg_image_node = compositor.nodes["bg_image_node"]
     bg_image_node.image = image
 
@@ -229,7 +221,7 @@ def setup_background():
     scale_node.location[0] = 400
 
 
-    #link compositor nodes
+    # Link compositor nodes
     compositor.links.new(compositor.nodes["Render Layers"].outputs[0], alpha_over_node.inputs[2])
     compositor.links.new(bg_image_node.outputs[0], frame_method_node.inputs[0])
     compositor.links.new(frame_method_node.outputs[0], scale_node.inputs[0])
@@ -257,10 +249,8 @@ def delete_and_hide_stuff():
 def setup_shadow_catcher():
     """If there is no shadow catcher add one and configure it"""
     scene = bpy.context.scene
-    
-    # Get reference to shadowCatcher
     catcher = bpy.context.scene.objects.get("ShadowCatcher")
-    # If there is no catcher make one
+
     if not catcher:
         plane = bpy.ops.mesh.primitive_plane_add(
             size=10, 
@@ -272,25 +262,22 @@ def setup_shadow_catcher():
         bpy.context.object.name = "ShadowCatcher"
         # Set scene visibility
         bpy.context.object.hide_set(True)
-        # Switch to cycles, turn shadow_catcher on, switch back to eevee
+        # Switch to Cycles, turn shadow_catcher on, switch back to Eevee
         scene.render.engine = 'CYCLES'
         bpy.context.object.is_shadow_catcher = True
         scene.render.engine = "BLENDER_EEVEE"
-    
-    # If catcher exists
+
     else:
         # Set scene visibility
         catcher.hide_set(True)
-        # Switch to cycles, turn shadow_catcher on, switch back to eevee
+        # Switch to Cycles, turn shadow_catcher on, switch back to Eevee
         scene.render.engine = 'CYCLES'
         catcher.is_shadow_catcher = True
         scene.render.engine = "BLENDER_EEVEE"
 
 def setup_basics(collection: bpy.types.Collection):
     """Delete all materials except _MAT materials, create Emmision materials, delete camera and light and create shadow catcher"""
-    # Get reference to scene
     scene = bpy.context.scene
-    
     number_of_objects = len(bpy.data.collections[collection.name].all_objects)
     
     # Remove all materials that are not _MAT
